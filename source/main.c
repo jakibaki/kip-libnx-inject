@@ -35,11 +35,14 @@ void __appExit(void)
 {
 }
 
+// Useful for debugging in very early boot-stages
+// Relies on a patched smcAmsIramCopy in exo which just calls panic instead
+// If this gets called it will instantly reboot the switch (into rcm if autorcm is enabled)
 void panic()
 {
     SecmonArgs args = {0};
-    args.X[0] = 0xF0000201; /* smcAmsIramCopy */
-    args.X[1] = 0xF00;      /* DRAM Address */
+    args.X[0] = 0xF0000201;
+    args.X[1] = 0xF00;      
 
     svcCallSecureMonitor(&args);
 }
