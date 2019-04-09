@@ -42,7 +42,7 @@ void panic()
 {
     SecmonArgs args = {0};
     args.X[0] = 0xF0000201;
-    args.X[1] = 0xF00;      
+    args.X[1] = 0xF00;
 
     svcCallSecureMonitor(&args);
 }
@@ -92,15 +92,16 @@ uint hooked_sdmmc_execute_cmd(SdmmcController *controller, sdmmc_cmd_t *sdmmc_cm
         controller->t210_sdmmc->clkcon = controller->t210_sdmmc->clkcon & 0xfffb;
     }
 
-
-
     u32 ctrl = (u64)controller->t210_sdmmc & 0xfff;
 
     if (is_inited && ctrl == 0x000) // log sd-access
-    {   
-        if(req != NULL) {
+    {
+        if (req != NULL)
+        {
             printf("Cmd: 0x%x Block size: 0x%llx Num Blocks: 0x%x Arg: 0x%x Writing?: %d\n", sdmmc_cmd->cmd, req->block_size, req->block_count, sdmmc_cmd->arg_sector, req->is_write);
-        } else {
+        }
+        else
+        {
             printf("Cmd: 0x%x Arg: 0x%x\n", sdmmc_cmd->cmd, sdmmc_cmd->arg_sector);
         }
     }
