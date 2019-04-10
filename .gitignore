@@ -1,0 +1,17 @@
+*.kip
+build
+libnx-patched/*~
+libnx-patched/*.o
+libnx-patched/*.bz2
+libnx-patched/*.nro
+libnx-patched/*.nso
+libnx-patched/*.elf
+libnx-patched/*.npdm
+libnx-patched/*.pfs0
+libnx-patched/Thumbs.db
+libnx-patched/.*/
+libnx-patched/debug/
+libnx-patched/release/
+libnx-patched/lib/
+libnx-patched/docs/
+.vscode/ipch
