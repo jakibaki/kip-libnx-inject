@@ -1,4 +1,6 @@
 *.kip
+*.data
+*.elf
 build
 libnx-patched/*~
 libnx-patched/*.o
