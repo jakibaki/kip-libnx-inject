@@ -116,7 +116,7 @@ void populate_function_pointers()
     // Gets start of our .text section
     svcQueryMemory(&meminfo, &pageinfo, (u64)&populate_function_pointers);
 
-    // hardcoded to 7.0 fat32 fs
+    // hardcoded to 7.0 exfat fs
     __fs_sleep = (__fs_sleep_func)meminfo.addr + INJECTED_SIZE + 0x1620d0;
     __fs_controller_action = (__fs_controller_action_func)meminfo.addr + INJECTED_SIZE + 0x166590;
 }
@@ -124,6 +124,8 @@ void populate_function_pointers()
 void thread_main()
 {
     svcSleepThread(10e+9L);
+
+    fatalSimple(0xffa);
 
     Result rc;
 
