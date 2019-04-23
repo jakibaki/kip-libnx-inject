@@ -125,8 +125,6 @@ void thread_main()
 {
     svcSleepThread(10e+9L);
 
-    fatalSimple(0xffa);
-
     Result rc;
 
     rc = smInitialize();
