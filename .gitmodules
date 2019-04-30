@@ -1,0 +1,3 @@
+[submodule "libnx-patched"]
+	path = libnx-patched
+	url = https://github.com/jakibaki/libnx
