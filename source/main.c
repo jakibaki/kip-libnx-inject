@@ -100,13 +100,16 @@ void populate_function_pointers()
     //__fs_controller_action = (__fs_controller_action_func)meminfo.addr + INJECTED_SIZE + 0x166590;
 
     // hardcoded to 6.1 exfat fs
-    mmc_get_gc_vtab2 = (__mmc_get_gc_vtab2)meminfo.addr + INJECTED_SIZE + 0x15ee80;
-    mmc_get_sd_vtab2 = (__mmc_get_sd_vtab2)meminfo.addr + INJECTED_SIZE + 0x15ebf0;
-    mmc_get_nand_vtab2 = (__mmc_get_nand_vtab2)meminfo.addr + INJECTED_SIZE + 0x15b090;
+        
+    mmc_get_gc_vtab2 = (__mmc_get_gc_vtab2)((intptr_t)meminfo.addr + INJECTED_SIZE + 0x15ee80);
+    mmc_get_sd_vtab2 = (__mmc_get_sd_vtab2)((intptr_t)meminfo.addr + INJECTED_SIZE + 0x15ebf0);
+    mmc_get_nand_vtab2 = (__mmc_get_nand_vtab2)((intptr_t)meminfo.addr + INJECTED_SIZE + 0x15b090);
 }
 
-void thread_main()
+void thread_main(void* arg)
 {
+    (void) arg;
+
     svcSleepThread(10e+9L);
 
     Result rc;
@@ -114,6 +117,16 @@ void thread_main()
     rc = smInitialize();
     if (R_FAILED(rc))
         fatalSimple(rc);
+
+    rc = setsysInitialize();
+    if (R_SUCCEEDED(rc))
+    {
+        SetSysFirmwareVersion fw;
+        rc = setsysGetFirmwareVersion(&fw);
+        if (R_SUCCEEDED(rc))
+            hosversionSet(MAKEHOSVERSION(fw.major, fw.minor, fw.micro));
+        setsysExit();
+    }
 
     rc = fsInitialize();
     if (R_FAILED(rc))
