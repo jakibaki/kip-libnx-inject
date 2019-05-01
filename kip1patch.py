@@ -33,8 +33,15 @@ patches = [
     #('B	#0xFFFFFFFFFFE6E87C', TEXT_OFFSET + 0x91790)
 
     # 7.0.1 exfat:
-    ('B	#0xA8', TEXT_OFFSET + 0x5a8),
-    ('B	#0xFFFFFFFFFFD992DC', TEXT_OFFSET + 0x166d30)
+    #('B	#0xA8', TEXT_OFFSET + 0x5a8),
+    #('B	#0xFFFFFFFFFFD992DC', TEXT_OFFSET + 0x166d30)
+
+    # 6.1 exfat:
+
+    # sdmmc_wrapper_read
+    ('B	#0xFFFFFFFFFFDAC36C', TEXT_OFFSET + 0x0153ca0),
+
+    ('B	#0x98', TEXT_OFFSET + 0x05b0)
 ]
 
 

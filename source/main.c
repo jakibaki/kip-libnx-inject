@@ -49,64 +49,43 @@ void panic()
 
 bool is_inited = false;
 
-// sleep(int milliseconds, uint divisor)
-typedef void (*__fs_sleep_func)(int, unsigned int);
+typedef struct_mmc_obj2_t *(*__mmc_get_gc_vtab2)();
+typedef struct_mmc_obj2_t *(*__mmc_get_sd_vtab2)();
+typedef struct_mmc_obj2_t *(*__mmc_get_nand_vtab2)();
 
-// uint controller_action(SdmmcController *controller,sdmmc_cmd_t *sdmmc_cmd,sdmmc_req *req, uint *blocks_transfered_write_out)
-typedef uint (*__fs_controller_action_func)(SdmmcController *, sdmmc_cmd_t *, sdmmc_req *, uint *);
+typedef ulonglong (*__vtab_rw_handler)(struct_mmc_obj2_t *, ulonglong, uint, void *, longlong, int);
 
-__fs_sleep_func __fs_sleep;
-__fs_controller_action_func __fs_controller_action;
+__mmc_get_gc_vtab2 mmc_get_gc_vtab2;
+__mmc_get_sd_vtab2 mmc_get_sd_vtab2;
+__mmc_get_nand_vtab2 mmc_get_nand_vtab2;
 
-uint hooked_sdmmc_execute_cmd(SdmmcController *controller, sdmmc_cmd_t *sdmmc_cmd, sdmmc_req *req, uint *blocks_transfered)
+ulonglong sdmmc_wrapper_read(void *buf, longlong buf_size, int mmc_id, uint sector,
+                             ulonglong num_sectors)
 {
-    // Fun fact: accessing the sd while non-sd-requests are processed works somewhat fine (fopen doesn't want to work iirc but if you open the file in the other thread you can fwrite/fread without trouble)
+    struct_mmc_obj2_t *this;
+    ulonglong read_res;
 
-    /*
-    t210_sdmmc & 0xfff == 0x000 -> sd-card
-    t210_sdmmc & 0xfff == 0x200 -> game-card
-    t210_sdmmc & 0xfff == 0x600 -> nand
-    */
-
-    uint controller_action_res;
-    _t210_sdmmc_t *t210_sdmmc;
-    bool sd_clock_disabled;
-
-    if (controller->initialized == false)
+    switch (mmc_id)
     {
-        fatalSimple(0xaaffaa);
-        //panic_idk(&DAT_7100144ec6, &DAT_7100144ec6, &DAT_7100144ec6, 0, in_x4, in_x5, in_x6, in_x7);
-    }
-    t210_sdmmc = controller->t210_sdmmc;
-    sd_clock_disabled = (t210_sdmmc->clkcon >> 2 & 1) == 0;
-    if (sd_clock_disabled)
-    {
-        /* enabled sd_clock */
-        t210_sdmmc->clkcon = t210_sdmmc->clkcon | 4;
-        (*__fs_sleep)(8, controller->time_divisor);
-    }
-    controller_action_res = (*__fs_controller_action)(controller, sdmmc_cmd, req, blocks_transfered);
-    (*__fs_sleep)(8, controller->time_divisor);
-    if (sd_clock_disabled)
-    {
-        controller->t210_sdmmc->clkcon = controller->t210_sdmmc->clkcon & 0xfffb;
+    case 0:
+        this = (*mmc_get_nand_vtab2)();
+        break;
+    case 1:
+        this = (*mmc_get_sd_vtab2)();
+        break;
+    case 2:
+        this = (*mmc_get_gc_vtab2)();
+        break;
+    default:
+        fatalSimple(0xffd);
     }
 
-    u32 ctrl = (u64)controller->t210_sdmmc & 0xfff;
-
-    if (is_inited && ctrl == 0x000) // log sd-access
+    if (this != NULL)
     {
-        if (req != NULL)
-        {
-            printf("Cmd: 0x%x Block size: 0x%llx Num Blocks: 0x%x Arg: 0x%x Writing?: %d\n", sdmmc_cmd->cmd, req->block_size, req->block_count, sdmmc_cmd->arg_sector, req->is_write);
-        }
-        else
-        {
-            printf("Cmd: 0x%x Arg: 0x%x\n", sdmmc_cmd->cmd, sdmmc_cmd->arg_sector);
-        }
+        read_res = (**(__vtab_rw_handler *)(this->vtab + 0x30))(this, (ulonglong)sector, num_sectors, buf, buf_size, 1);
+        return read_res;
     }
-
-    return controller_action_res;
+    fatalSimple(0xffa);
 }
 
 void populate_function_pointers()
@@ -117,8 +96,13 @@ void populate_function_pointers()
     svcQueryMemory(&meminfo, &pageinfo, (u64)&populate_function_pointers);
 
     // hardcoded to 7.0 exfat fs
-    __fs_sleep = (__fs_sleep_func)meminfo.addr + INJECTED_SIZE + 0x1620d0;
-    __fs_controller_action = (__fs_controller_action_func)meminfo.addr + INJECTED_SIZE + 0x166590;
+    //__fs_sleep = (__fs_sleep_func)meminfo.addr + INJECTED_SIZE + 0x1620d0;
+    //__fs_controller_action = (__fs_controller_action_func)meminfo.addr + INJECTED_SIZE + 0x166590;
+
+    // hardcoded to 6.1 exfat fs
+    mmc_get_gc_vtab2 = (__mmc_get_gc_vtab2)meminfo.addr + INJECTED_SIZE + 0x15ee80;
+    mmc_get_sd_vtab2 = (__mmc_get_sd_vtab2)meminfo.addr + INJECTED_SIZE + 0x15ebf0;
+    mmc_get_nand_vtab2 = (__mmc_get_nand_vtab2)meminfo.addr + INJECTED_SIZE + 0x15b090;
 }
 
 void thread_main()
@@ -139,7 +123,7 @@ void thread_main()
     if (R_FAILED(rc))
         fatalSimple(rc);
 
-    twiliInitialize();
+    //twiliInitialize();
 
     is_inited = true;
 }
